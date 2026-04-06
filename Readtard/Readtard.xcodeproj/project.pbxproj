@@ -10,6 +10,16 @@
 		4F5E61CA2F840AD7008ED51A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4F5E61C72F840AD7008ED51A /* Assets.xcassets */; };
 		4F5E61CB2F840AD7008ED51A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5E61C82F840AD7008ED51A /* ContentView.swift */; };
 		4F5E61CC2F840AD7008ED51A /* ReadtardApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5E61C92F840AD7008ED51A /* ReadtardApp.swift */; };
+		4F5E61D62F841800008ED51A /* Audiobook.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5E61CF2F8417AC008ED51A /* Audiobook.swift */; };
+		4F5E61D72F841801008ED51A /* PlayerTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5E61D02F8417B0008ED51A /* PlayerTheme.swift */; };
+		4F5E61D92F841803008ED51A /* AudiobookPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5E61D22F8417D6008ED51A /* AudiobookPlayerView.swift */; };
+		4F5E61D92F841C46008ED51A /* AudiobookMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5E61D82F841C46008ED51A /* AudiobookMetadata.swift */; };
+		4F5E61DA2F841804008ED51A /* ArtworkCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5E61D32F8417DF008ED51A /* ArtworkCard.swift */; };
+		4F5E61DB2F841C47008ED51A /* AudiobookLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5E61DA2F841C47008ED51A /* AudiobookLoader.swift */; };
+		4F5E61DD2F841C47008ED51A /* AudioPlayerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5E61DC2F841C47008ED51A /* AudioPlayerController.swift */; };
+		4F5E61DE2F842100008ED51A /* Audiobook in Resources */ = {isa = PBXBuildFile; fileRef = 4F5E61DF2F842101008ED51A /* Audiobook */; };
+		4F5E61DF2F8423FB008ED51A /* AskConversationSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5E61DE2F8423FB008ED51A /* AskConversationSheet.swift */; };
+		4F5E61E12F8423FB008ED51A /* AskConversationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5E61E02F8423FB008ED51A /* AskConversationController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -17,6 +27,16 @@
 		4F5E61C72F840AD7008ED51A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4F5E61C82F840AD7008ED51A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		4F5E61C92F840AD7008ED51A /* ReadtardApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadtardApp.swift; sourceTree = "<group>"; };
+		4F5E61CF2F8417AC008ED51A /* Audiobook.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Audiobook.swift; sourceTree = "<group>"; };
+		4F5E61D02F8417B0008ED51A /* PlayerTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerTheme.swift; sourceTree = "<group>"; };
+		4F5E61D22F8417D6008ED51A /* AudiobookPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudiobookPlayerView.swift; sourceTree = "<group>"; };
+		4F5E61D32F8417DF008ED51A /* ArtworkCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkCard.swift; sourceTree = "<group>"; };
+		4F5E61D82F841C46008ED51A /* AudiobookMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudiobookMetadata.swift; sourceTree = "<group>"; };
+		4F5E61DA2F841C47008ED51A /* AudiobookLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudiobookLoader.swift; sourceTree = "<group>"; };
+		4F5E61DC2F841C47008ED51A /* AudioPlayerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayerController.swift; sourceTree = "<group>"; };
+		4F5E61DE2F8423FB008ED51A /* AskConversationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskConversationSheet.swift; sourceTree = "<group>"; };
+		4F5E61DF2F842101008ED51A /* Audiobook */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Audiobook; sourceTree = "<group>"; };
+		4F5E61E02F8423FB008ED51A /* AskConversationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskConversationController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,6 +57,9 @@
 				4F5E61C82F840AD7008ED51A /* ContentView.swift */,
 				4F5E61C92F840AD7008ED51A /* ReadtardApp.swift */,
 				4F5E61BA2F8408D9008ED51A /* Products */,
+				4F5E61CD2F841740008ED51A /* Models */,
+				4F5E61CE2F841742008ED51A /* Player */,
+				4F5E61DF2F842101008ED51A /* Audiobook */,
 			);
 			sourceTree = "<group>";
 		};
@@ -46,6 +69,29 @@
 				4F5E61B92F8408D9008ED51A /* Readtard.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		4F5E61CD2F841740008ED51A /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				4F5E61CF2F8417AC008ED51A /* Audiobook.swift */,
+				4F5E61D02F8417B0008ED51A /* PlayerTheme.swift */,
+				4F5E61D82F841C46008ED51A /* AudiobookMetadata.swift */,
+				4F5E61DA2F841C47008ED51A /* AudiobookLoader.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		4F5E61CE2F841742008ED51A /* Player */ = {
+			isa = PBXGroup;
+			children = (
+				4F5E61D22F8417D6008ED51A /* AudiobookPlayerView.swift */,
+				4F5E61D32F8417DF008ED51A /* ArtworkCard.swift */,
+				4F5E61DC2F841C47008ED51A /* AudioPlayerController.swift */,
+				4F5E61DE2F8423FB008ED51A /* AskConversationSheet.swift */,
+				4F5E61E02F8423FB008ED51A /* AskConversationController.swift */,
+			);
+			path = Player;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -111,6 +157,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4F5E61CA2F840AD7008ED51A /* Assets.xcassets in Resources */,
+				4F5E61DE2F842100008ED51A /* Audiobook in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -121,8 +168,17 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4F5E61D92F841803008ED51A /* AudiobookPlayerView.swift in Sources */,
+				4F5E61E12F8423FB008ED51A /* AskConversationController.swift in Sources */,
+				4F5E61D92F841C46008ED51A /* AudiobookMetadata.swift in Sources */,
+				4F5E61D62F841800008ED51A /* Audiobook.swift in Sources */,
+				4F5E61DD2F841C47008ED51A /* AudioPlayerController.swift in Sources */,
+				4F5E61DA2F841804008ED51A /* ArtworkCard.swift in Sources */,
 				4F5E61CB2F840AD7008ED51A /* ContentView.swift in Sources */,
+				4F5E61DF2F8423FB008ED51A /* AskConversationSheet.swift in Sources */,
+				4F5E61D72F841801008ED51A /* PlayerTheme.swift in Sources */,
 				4F5E61CC2F840AD7008ED51A /* ReadtardApp.swift in Sources */,
+				4F5E61DB2F841C47008ED51A /* AudiobookLoader.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -261,11 +317,13 @@
 				DEVELOPMENT_TEAM = KT5QT8U65A;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -295,11 +353,13 @@
 				DEVELOPMENT_TEAM = KT5QT8U65A;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

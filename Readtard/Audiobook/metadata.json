@@ -1,0 +1,15 @@
+{
+    "title": "Pump up the jam",
+    "author": "Technotronic",
+    "publisher": "Felly",
+    "coverImageFileName": "cover.jpg",
+    "audioFileName": "audiobook",
+    "audioFileExtension": "mp3",
+    "badge": "",
+    "durationSeconds": 0,
+    "theme": {
+        "backgroundTopHex": "#3D121F",
+        "backgroundBottomHex": "#2E0D19",
+        "coverStripeHex": "#BD2230"
+    }
+}
