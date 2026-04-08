@@ -165,16 +165,20 @@ struct ContentView: View {
             return
         }
 
-        askContext = AskSheetContext(
-            source: .ebook,
-            book: book,
-            currentTime: nil,
-            duration: nil,
-            currentPage: ebookReader.currentPageNumber,
-            totalPages: ebookReader.totalPages,
-            ebookSelectionLocator: ebookReader.selectedAskLocator
-        )
-        isAskSheetPresented = true
+        Task {
+            let askLocator = await ebookReader.askLocatorFromLastVisibleWords()
+
+            askContext = AskSheetContext(
+                source: .ebook,
+                book: book,
+                currentTime: nil,
+                duration: nil,
+                currentPage: ebookReader.currentPageNumber,
+                totalPages: ebookReader.totalPages,
+                ebookSelectionLocator: askLocator ?? ebookReader.selectedAskLocator
+            )
+            isAskSheetPresented = true
+        }
     }
 
     private func dismissAskSheet() {

@@ -158,23 +158,6 @@ final class EbookReaderController: ObservableObject {
         return EbookLocator(locator: currentLocator)
     }
 
-    var currentSelectionText: String? {
-        guard
-            let selectableNavigator = navigator as? SelectableNavigator,
-            let highlight = selectableNavigator.currentSelection?.locator.text.highlight?
-                .trimmingCharacters(in: .whitespacesAndNewlines),
-            !highlight.isEmpty
-        else {
-            return nil
-        }
-
-        return highlight
-    }
-
-    var hasAskSelection: Bool {
-        selectedAskLocator != nil
-    }
-
     func toggleControls() {
         controlsVisible.toggle()
     }
@@ -248,6 +231,138 @@ final class EbookReaderController: ObservableObject {
         } catch {
             loadingError = "Unable to open this chapter."
         }
+    }
+
+    func askLocatorFromLastVisibleWords() async -> EbookLocator? {
+        guard let navigator = navigator as? EPUBNavigatorViewController else {
+            #if DEBUG
+            print("=== READIUM LAST VISIBLE WORDS ===")
+            print("Navigator is not ready.")
+            print("==================================")
+            #endif
+            return nil
+        }
+
+        let script = """
+        (function() {
+          function isRectVisible(rect) {
+            return rect &&
+              rect.width > 0 &&
+              rect.height > 0 &&
+              rect.right > 0 &&
+              rect.left < window.innerWidth &&
+              rect.bottom > 0 &&
+              rect.top < window.innerHeight;
+          }
+
+          function isTextNodeRenderable(node) {
+            if (!node || !node.nodeValue || !node.nodeValue.trim()) return false;
+            const parent = node.parentElement;
+            if (!parent) return false;
+            const style = window.getComputedStyle(parent);
+            if (!style) return false;
+            return style.display !== "none" &&
+              style.visibility !== "hidden" &&
+              style.opacity !== "0";
+          }
+
+          function hasVisibleRectForRange(range) {
+            const rects = range.getClientRects();
+            for (let i = 0; i < rects.length; i++) {
+              if (isRectVisible(rects[i])) return true;
+            }
+            return false;
+          }
+
+          function nodeHasVisibleContent(node) {
+            const range = document.createRange();
+            range.selectNodeContents(node);
+            return hasVisibleRectForRange(range);
+          }
+
+          function lastVisibleOffset(node) {
+            const text = node.nodeValue || "";
+            if (text.length === 0) return 0;
+
+            let low = 1;
+            let high = text.length;
+            let best = 0;
+
+            while (low <= high) {
+              const mid = Math.floor((low + high) / 2);
+              const range = document.createRange();
+              range.setStart(node, 0);
+              range.setEnd(node, mid);
+              if (hasVisibleRectForRange(range)) {
+                best = mid;
+                low = mid + 1;
+              } else {
+                high = mid - 1;
+              }
+            }
+
+            return best;
+          }
+
+          const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+          const candidates = [];
+          let current = walker.nextNode();
+          while (current) {
+            if (isTextNodeRenderable(current) && nodeHasVisibleContent(current)) {
+              candidates.push(current);
+            }
+            current = walker.nextNode();
+          }
+
+          for (let i = candidates.length - 1; i >= 0; i--) {
+            const node = candidates[i];
+            const offset = lastVisibleOffset(node);
+            if (offset <= 0) continue;
+
+            const prefix = (node.nodeValue || "").slice(0, offset).trim();
+            if (!prefix) continue;
+
+            const words = prefix.split(/\\s+/).filter(Boolean);
+            if (words.length === 0) continue;
+            return words.slice(-20).join(" ");
+          }
+
+          return "";
+        })();
+        """
+
+        let result = await navigator.evaluateJavaScript(script)
+        let extractedWords: String
+
+        switch result {
+        case let .success(value):
+            extractedWords = (value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        case .failure:
+            extractedWords = ""
+        }
+
+        #if DEBUG
+        print("=== READIUM LAST VISIBLE WORDS ===")
+        if !extractedWords.isEmpty {
+            print(extractedWords)
+        } else {
+            print("No visible text words found on this page.")
+        }
+        print("==================================")
+        #endif
+
+        guard
+            !extractedWords.isEmpty,
+            let currentLocator,
+            var locator = EbookLocator(locator: currentLocator)
+        else {
+            return nil
+        }
+
+        locator.textHighlight = extractedWords
+        selectedAskText = extractedWords
+        selectedAskLocator = locator
+        return locator
     }
 
     private func openEbook(
@@ -535,6 +650,7 @@ extension EbookReaderController: EPUBNavigatorDelegate {
         selectedAskLocator = EbookLocator(locator: locator)
         selectedAskText = locator.text.highlight?.trimmingCharacters(in: .whitespacesAndNewlines)
 
+        #if DEBUG
         if let json = locator.jsonString {
             print("=== READIUM SELECTION LOCATOR ===")
             print(json)
@@ -552,6 +668,7 @@ extension EbookReaderController: EPUBNavigatorDelegate {
             print(otherLocations)
             print("=========================================")
         }
+        #endif
 
         return true
     }

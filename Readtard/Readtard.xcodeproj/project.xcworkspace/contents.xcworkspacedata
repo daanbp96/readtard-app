@@ -4,7 +4,4 @@
    <FileRef
       location = "self:">
    </FileRef>
-   <FileRef
-      location = "group:BACKEND_LOCATOR_HANDOVER.md">
-   </FileRef>
 </Workspace>

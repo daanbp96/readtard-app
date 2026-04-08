@@ -7,16 +7,16 @@ import Foundation
 import ReadiumShared
 
 struct EbookLocator: Codable, Equatable {
-    let href: String
-    let title: String?
-    let fragments: [String]
-    let position: Int?
-    let progression: Double?
-    let totalProgression: Double?
-    let otherLocations: [String: JSONValue]?
-    let textBefore: String?
-    let textHighlight: String?
-    let textAfter: String?
+    var href: String
+    var title: String?
+    var fragments: [String]
+    var position: Int?
+    var progression: Double?
+    var totalProgression: Double?
+    var otherLocations: [String: JSONValue]?
+    var textBefore: String?
+    var textHighlight: String?
+    var textAfter: String?
 
     init?(locator: Locator) {
         href = locator.href.string

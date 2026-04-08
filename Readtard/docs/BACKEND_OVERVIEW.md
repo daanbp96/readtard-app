@@ -2,11 +2,13 @@
 
 This document describes the **Python backend** in this repository: its purpose, main parts, and how they fit together. It is **not** a Swift or API-tutorial doc; for client integration details see [`FRONTEND_INTEGRATION.md`](FRONTEND_INTEGRATION.md).
 
+> Contract note: historical sections in this document discuss snippet-based ebook position resolution. The current iOS client sends locator-based ebook asks (`ebook.kind = "locator"`). See `BACKEND_LOCATOR_HANDOVER.md` for the active frontend payload shape.
+
 ---
 
 ## Purpose
 
-**Readtard** is a **spoiler-aware reading assistant** for fiction. Given a user’s **current position** in a book (expressed as a **verbatim text snippet** for now) and a **natural-language question**, the backend answers using:
+**Readtard** is a **spoiler-aware reading assistant** for fiction. Given a user’s **current position** in a book (provided by the client as a locator payload) and a **natural-language question**, the backend answers using:
 
 - **Only** text from **at or before** that position in the story (plus retrieved chunks that obey the same boundary), and  
 - An LLM with instructions **not** to use outside knowledge about the book.

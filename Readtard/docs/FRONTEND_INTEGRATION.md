@@ -1,6 +1,6 @@
-# Readtard iOS (Swift) — backend integration guide
+# Readtard iOS (Swift) — current backend contract
 
-This document describes what to build in the **Swift/SwiftUI** app to talk to the **Readtard FastAPI** backend. It assumes a single development machine on your LAN for now (no production hardening).
+This document describes the request/response contract currently used by the iOS app with the Readtard backend.
 
 ---
 
@@ -11,7 +11,7 @@ This document describes what to build in the **Swift/SwiftUI** app to talk to th
 | `GET` | `/health` | Liveness; `{ "status": "ok", "ready": true }` when the process finished startup. |
 | `GET` | `/books` | List books the server can index and serve. |
 | `GET` | `/books/{book_id}/epub` | Download the **same EPUB file** the server uses for RAG (for your ereader). |
-| `POST` | `/ask` | Spoiler-safe Q&A at a **text position** (ebook snippet today). |
+| `POST` | `/ask` | Spoiler-safe Q&A at a **text position** (ebook locator payload). |
 
 OpenAPI docs (useful while building): `GET /docs` on the server.
 
@@ -19,9 +19,9 @@ OpenAPI docs (useful while building): `GET /docs` on the server.
 
 ---
 
-## 2. Configuration in the app
+## 2. Runtime configuration
 
-Build a small **API configuration** type (or `Info.plist` / build settings):
+Current app expectations:
 
 - **`baseURL`** — e.g. `http://192.168.1.12:8000` during development (Mac’s LAN IP + port). No trailing slash.
 - **Timeouts** — use a **long** read timeout for `POST /ask` (LLM calls are slow; 60–120s is reasonable for demos).
@@ -93,23 +93,27 @@ Use this to show “backend reachable” before opening the Ask flow (optional b
 
 ### 3.4 `POST /ask`
 
-**Request body (ebook path — current MVP)**
-
 ```json
 {
   "book_id": "hp_philosophers_stone",
   "source": "ebook",
   "question": "What does this passage refer to?",
   "ebook": {
-    "kind": "snippet",
-    "snippet": "Verbatim text from the book near the reader cursor"
+    "kind": "locator",
+    "locator": {
+      "href": "index_split_000.html",
+      "position": 3,
+      "progression": 0.0406,
+      "totalProgression": 0.0110,
+      "textHighlight": "last visible words from current page"
+    }
   }
 }
 ```
 
 - **`book_id`** — **required.** Must match a server book id.
 - **`source`** — `"ebook"` or `"audiobook"`.
-- **`ebook.snippet`** — must match **exactly one** location in the server’s normalized plain text (same rules as backend `resolve_position_from_snippet`). Typically: **a short verbatim string** around the user’s current read position (your reader should supply this).
+- **`ebook.locator`** — Readium locator-derived position payload used by the app for ebook asks. `textHighlight` may contain a short tail snippet extracted from the current visible page.
 
 **Response 200**
 
@@ -122,11 +126,11 @@ Use this to show “backend reachable” before opening the Ask flow (optional b
 | Status | Meaning |
 |--------|---------|
 | **422** | Validation error (e.g. missing `book_id`, empty `question`). |
-| **400** | `BAD_POSITION` — snippet missing or ambiguous (`detail` has `code` and `message`). |
+| **400** | `BAD_POSITION` — locator or locator-derived context cannot be resolved (`detail` has `code` and `message`). |
 | **404** | Unknown `book_id` / no book on disk. |
 | **501** | `AUDIOBOOK_NOT_IMPLEMENTED` if `source` is `audiobook` (until you implement mapping). |
 
-**Audiobook (future)**
+**Audiobook payload**
 
 ```json
 {
@@ -137,59 +141,11 @@ Use this to show “backend reachable” before opening the Ask flow (optional b
 }
 ```
 
-Currently returns **501**; your app should handle that and/or keep using ebook + snippet until the backend implements timestamp → position.
+If audiobook ask is not mapped yet, backend may return **501**.
 
 ---
 
-## 4. What to build in the Swift app (checklist)
-
-### 4.1 Networking layer
-
-- [ ] `APIClient` (or similar) with injectable `baseURL`.
-- [ ] Typed methods: `health()`, `listBooks()`, `downloadEpub(bookId:)`, `ask(request:)`.
-- [ ] **Codable** models matching the JSON above (`AskRequest`, `AskResponse`, `BookListResponse`, …).
-- [ ] Centralized **error** type: decode FastAPI `detail` (string or `{ code, message }`).
-- [ ] Long timeout for `/ask`; shorter for `/health` and downloads.
-
-### 4.2 Library / book identity
-
-- [ ] Persist **selected `book_id`** (UserDefaults or SwiftData) after user picks a book or after first sync.
-- [ ] After `GET /books`, reconcile with local cached EPUBs (optional): re-download if missing or outdated.
-
-### 4.3 Ereader
-
-- [ ] Open EPUB from **local file URL** (downloaded via `GET .../epub`).
-- [ ] Expose **current reading context** as text the backend can match — for MVP, a **verbatim snippet** string (e.g. last sentence or paragraph) derived from the same plain-text rules the server uses where possible; if your reader only gives you HTML, strip tags and normalize whitespace to match backend expectations.
-
-### 4.4 Ask UI (existing `AskConversation*` flow)
-
-- [ ] On submit: build `POST /ask` with `book_id`, `source: "ebook"`, `question`, `ebook: { kind: "snippet", snippet }`.
-- [ ] Show loading state; handle errors with user-visible messages.
-- [ ] Display `answer` string in the conversation UI.
-
-### 4.5 Audiobook player (parallel track)
-
-- [ ] Keep playback UI and **metadata** as you have now.
-- [ ] Until timestamp → snippet exists, either hide Ask for audiobook-only sessions or show “not supported yet” when the backend returns **501**.
-
-### 4.6 Development workflow
-
-- [ ] Document in README: set Mac IP, run backend with `0.0.0.0:8000`, point app `baseURL` at `http://<ip>:8000`.
-- [ ] Optional: Settings screen in the app to edit base URL for testers.
-
----
-
-## 5. Suggested order of implementation
-
-1. **Config + `GET /health`** — proves connectivity.
-2. **`GET /books` + list UI** — user (or dev) picks `book_id`.
-3. **`GET /books/{id}/epub` + save to disk + open in reader** — vertical slice for reading.
-4. **`POST /ask` with snippet from reader** — full Ask loop.
-5. Polish errors, timeouts, and later audiobook mapping.
-
----
-
-## 6. curl examples (sanity checks)
+## 4. curl examples (sanity checks)
 
 ```bash
 curl -s http://127.0.0.1:8000/health
@@ -201,12 +157,12 @@ curl -s http://127.0.0.1:8000/docs
 ```bash
 curl -s -X POST http://127.0.0.1:8000/ask \
   -H 'Content-Type: application/json' \
-  -d '{"book_id":"hp_philosophers_stone","source":"ebook","question":"Who is Dumbledore?","ebook":{"kind":"snippet","snippet":"your verbatim snippet here"}}'
+  -d '{"book_id":"hp_philosophers_stone","source":"ebook","question":"Who is Dumbledore?","ebook":{"kind":"locator","locator":{"href":"index_split_000.html","position":3,"progression":0.04,"totalProgression":0.01,"textHighlight":"last visible words from page"}}}'
 ```
 
 ---
 
-## 7. Backend file layout (reference)
+## 5. Backend file layout (reference)
 
 Server repo:
 

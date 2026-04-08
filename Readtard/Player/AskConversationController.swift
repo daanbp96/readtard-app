@@ -103,7 +103,7 @@ final class AskConversationController: ObservableObject {
 
             do {
                 if responseContext.source == .ebook, responseContext.ebookSelectionLocator == nil {
-                    messages.append(AskMessage(role: .assistant, text: "Select text in the ebook before asking."))
+                    messages.append(AskMessage(role: .assistant, text: "I could not extract readable text from this page yet. Try turning a page and ask again."))
                     return
                 }
 
@@ -126,6 +126,7 @@ final class AskConversationController: ObservableObject {
     }
 
     private func debugPrintRequest(_ request: AskRequest) {
+        #if DEBUG
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
 
@@ -142,6 +143,7 @@ final class AskConversationController: ObservableObject {
         print("=== ASK REQUEST PAYLOAD ===")
         print(json)
         print("===========================")
+        #endif
     }
 }
 
@@ -176,22 +178,6 @@ private struct AskContext {
     let currentPage: Int?
     let totalPages: Int?
     let ebookSelectionLocator: EbookLocator?
-
-    var positionDescription: String {
-        switch source {
-        case .audiobook:
-            "Audiobook at \(formattedTime(currentTime ?? 0)) of \(formattedTime(duration ?? 0))"
-        case .ebook:
-            "Ebook page \(currentPage ?? 1) of \(totalPages ?? 1)"
-        }
-    }
-
-    private func formattedTime(_ seconds: TimeInterval) -> String {
-        let totalSeconds = Int(seconds.rounded(.down))
-        let minutes = totalSeconds / 60
-        let remainder = totalSeconds % 60
-        return String(format: "%d:%02d", minutes, remainder)
-    }
 
     func makeRequest(question: String) -> AskRequest {
         switch source {

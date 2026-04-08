@@ -238,8 +238,6 @@ struct EbookReaderView: View {
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(.white)
-                    .disabled(!reader.hasAskSelection)
-                    .opacity(reader.hasAskSelection ? 1 : 0.45)
                     .padding(.leading, 24)
 
                     Spacer()

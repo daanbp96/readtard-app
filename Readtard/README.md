@@ -66,9 +66,9 @@ SwiftUI demo app for:
 
 ### Backend docs
 
-- `BACKEND_OVERVIEW.md`
-- `FRONTEND_INTEGRATION.md`
-- `BACKEND_LOCATOR_HANDOVER.md`
+- `docs/BACKEND_OVERVIEW.md`
+- `docs/FRONTEND_INTEGRATION.md`
+- `docs/BACKEND_LOCATOR_HANDOVER.md`
 
 These describe the backend contract and the locator-based ebook payload.
 
@@ -101,6 +101,21 @@ At least one of audiobook or ebook should exist.
 - Persisted in `ReadingProgressStore` as JSON
 
 Important: the ebook API should treat the locator as the real position, not the displayed page label.
+
+## Current Ask Behavior
+
+### Ebook Ask (`Ask me`)
+
+- On tap, the reader extracts the **last visible words** from the current rendered ebook page.
+- The app uses locator-based requests:
+  - `ebook.kind = "locator"`
+  - `ebook.locator` includes `href/progression/position` and `textHighlight` (tail snippet).
+- Ask requests are debug-printed in debug builds only.
+
+### Audiobook Ask
+
+- Uses `audiobook.timestamp_sec` as the current position.
+- Request shape stays unchanged for audiobook source.
 
 ## Current Ebook Navigation Design
 
@@ -160,7 +175,7 @@ The app sends:
   - `totalProgression`
   - nearby text fields when available
 
-See `BACKEND_LOCATOR_HANDOVER.md` for the expected payload shape.
+See `docs/BACKEND_LOCATOR_HANDOVER.md` for the expected payload shape.
 
 ## Validation Checklist
 
