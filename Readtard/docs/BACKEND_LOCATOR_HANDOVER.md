@@ -16,6 +16,12 @@ The app sends:
 - for ebook: `ebook.kind = "locator"` and `ebook.locator`
 - for audiobook: `audiobook.timestamp_sec`
 
+## Book ID source
+
+- Frontend syncs `GET /books` on launch.
+- `books[].id` is treated as canonical `book_id` for requests when mapped.
+- `directory_id` (if present) is ignored by iOS for API calls.
+
 ## Ebook request shape
 
 ```json

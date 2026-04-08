@@ -6,6 +6,12 @@ This document is the backend-facing contract for requests sent by the current iO
 
 - `POST /ask`
 
+## Related endpoints used by current app
+
+- `GET /health`
+- `GET /books`
+- `GET /books/{book_id}/epub`
+
 ## Top-level request shape
 
 ```json
@@ -23,6 +29,13 @@ This document is the backend-facing contract for requests sent by the current iO
 - `book_id` (string)
 - `source` (`"ebook"` or `"audiobook"`)
 - `question` (string, non-empty)
+
+## Book ID selection in frontend
+
+- App syncs `GET /books` on launch.
+- Uses `books[].id` as canonical `book_id` when matched to a local bundled book.
+- May ignore `directory_id` field if backend returns it.
+- For ebook books missing bundled EPUB, app downloads `GET /books/{book_id}/epub` and opens cached file from Application Support.
 
 ---
 

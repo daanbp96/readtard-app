@@ -23,11 +23,13 @@ struct BookListResponse: Decodable {
 
 struct BookListItem: Decodable {
     let id: String
+    let directoryID: String?
     let epubFilename: String
     let title: String?
 
     private enum CodingKeys: String, CodingKey {
         case id
+        case directoryID = "directory_id"
         case epubFilename = "epub_filename"
         case title
     }

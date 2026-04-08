@@ -18,7 +18,7 @@ SwiftUI demo app for:
 ### Models
 
 - `Models/Audiobook.swift`
-  Core book model. Resolves bundled file URLs from `Book/<FolderName>/`.
+  Core book model. Resolves bundled file URLs and backend-synced IDs/EPUB cache paths.
 - `Models/AudiobookMetadata.swift`
   `metadata.json` decoding model.
 - `Models/AudiobookLoader.swift`
@@ -63,6 +63,13 @@ SwiftUI demo app for:
 
 - `Player/LibraryView.swift`
   Library grid for bundled books.
+
+## Backend Book Sync (Current)
+
+- On launch, app loads bundled `Book/*` metadata, then calls `GET /books`.
+- Backend `books[].id` is treated as canonical `book_id` when available.
+- For ebook-only books missing a bundled EPUB, app downloads `GET /books/{book_id}/epub` and caches to:
+  - `Application Support/Readtard/books/<book_id>/<epub_filename>`
 
 ### Backend docs
 
@@ -135,7 +142,7 @@ This is simpler than the earlier mixed approach and is easier to debug.
 - Audiobook playback and timestamp progress
 - Ebook locator resume
 - Ebook locator payload for backend asks
-- Bundled multi-book library loading
+- Bundled + backend-synced multi-book library loading
 
 ### Still fragile / needs follow-up
 

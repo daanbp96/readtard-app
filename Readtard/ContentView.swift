@@ -17,6 +17,7 @@ struct ContentView: View {
     @StateObject private var player = AudioPlayerController()
     @StateObject private var ebookReader = EbookReaderController()
     @StateObject private var progressStore = ReadingProgressStore()
+    private let apiClient = ReadtardAPIClient()
     @State private var books: [Audiobook] = []
     @State private var currentBook: Audiobook?
     @State private var isAskSheetPresented = false
@@ -130,7 +131,7 @@ struct ContentView: View {
             )
         }
         .task {
-            loadLibrary()
+            await loadLibrary()
         }
     }
 
@@ -186,9 +187,11 @@ struct ContentView: View {
         askContext = nil
     }
 
-    private func loadLibrary() {
+    private func loadLibrary() async {
         do {
-            books = try AudiobookLoader.loadBundledBooks()
+            let bundledBooks = try AudiobookLoader.loadBundledBooks()
+            let syncedBooks = try await syncBooksWithBackend(bundledBooks)
+            books = syncedBooks
             libraryError = nil
         } catch {
             books = []
@@ -205,21 +208,33 @@ struct ContentView: View {
             }
             readingMode = .audiobook
         } else {
-            ebookReader.load(
-                from: book,
-                resumeLocatorJSON: progressStore.ebookResumeLocatorJSON(for: book)
-            )
-            readingMode = .ebook
+            Task {
+                let resolvedBook = await ensureBackendEpubIfNeeded(for: book)
+                if currentBook?.folderName == book.folderName {
+                    currentBook = resolvedBook
+                }
+                ebookReader.load(
+                    from: resolvedBook,
+                    resumeLocatorJSON: progressStore.ebookResumeLocatorJSON(for: resolvedBook)
+                )
+                readingMode = .ebook
+            }
         }
     }
 
     private func switchToEbook() {
         dismissAskSheet()
         if let book = currentBook {
-            ebookReader.load(
-                from: book,
-                resumeLocatorJSON: progressStore.ebookResumeLocatorJSON(for: book)
-            )
+            Task {
+                let resolvedBook = await ensureBackendEpubIfNeeded(for: book)
+                if currentBook?.folderName == book.folderName {
+                    currentBook = resolvedBook
+                }
+                ebookReader.load(
+                    from: resolvedBook,
+                    resumeLocatorJSON: progressStore.ebookResumeLocatorJSON(for: resolvedBook)
+                )
+            }
         }
         readingMode = .ebook
     }
@@ -266,6 +281,47 @@ struct ContentView: View {
         ebookReader.reset()
         currentBook = nil
         readingMode = .library
+    }
+
+    private func syncBooksWithBackend(_ localBooks: [Audiobook]) async throws -> [Audiobook] {
+        let backendBooks = try await apiClient.listBooks().books
+        let byID = Dictionary(uniqueKeysWithValues: backendBooks.map { ($0.id, $0) })
+        let byNormalizedTitle = Dictionary(uniqueKeysWithValues: backendBooks.compactMap { item -> (String, BookListItem)? in
+            guard let title = item.title?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty else {
+                return nil
+            }
+            return (title.lowercased(), item)
+        })
+
+        return localBooks.map { book in
+            if let exact = byID[book.folderName] {
+                return book.updatingBackendInfo(bookID: exact.id, epubFilename: exact.epubFilename)
+            }
+
+            let titleKey = book.title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            if let titleMatch = byNormalizedTitle[titleKey] {
+                return book.updatingBackendInfo(bookID: titleMatch.id, epubFilename: titleMatch.epubFilename)
+            }
+
+            return book
+        }
+    }
+
+    private func ensureBackendEpubIfNeeded(for book: Audiobook) async -> Audiobook {
+        guard
+            book.ebookURL == nil,
+            let backendEpubFilename = book.backendEpubFilename
+        else {
+            return book
+        }
+
+        do {
+            _ = try await apiClient.downloadEpub(bookID: book.backendBookID, fileName: backendEpubFilename)
+            return book
+        } catch {
+            libraryError = "Could not download ebook for \(book.title): \(error.localizedDescription)"
+            return book
+        }
     }
 }
 

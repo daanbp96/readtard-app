@@ -64,8 +64,12 @@ Use this to show “backend reachable” before opening the Ask flow (optional b
 - **`id`** — stable string; use everywhere (downloads, navigation, `/ask`).
 - **`title`** — may be `null` if the server folder has no `metadata.json`.
 - **`epub_filename`** — filename when saving locally (informational).
+- **`directory_id`** — optional backend/debug identifier; frontend ignores this for API calls.
 
-**Frontend work:** model `BookListItem` / `BookListResponse`; drive a library picker or hard-code an id during early development.
+Current frontend behavior:
+
+- On app launch, iOS calls `GET /books`.
+- If a backend entry matches a local bundled book (by ID or title), app updates that book’s backend `book_id` and `epub_filename`.
 
 ---
 
@@ -78,7 +82,7 @@ Use this to show “backend reachable” before opening the Ask flow (optional b
 - **404** — `detail` may be a JSON object with `code`: `BOOK_NOT_FOUND`.
 - **400** — invalid `book_id` format.
 
-**Frontend work**
+Current frontend behavior
 
 1. Build a URL: `{baseURL}/books/{bookId}/epub`.
 2. Download with `URLSession` (or async `URLSession.shared.data(from:)`).
@@ -86,8 +90,8 @@ Use this to show “backend reachable” before opening the Ask flow (optional b
 
    `Application Support/Readtard/books/{bookId}/{epub_filename}`
 
-4. Pass the **local file URL** into your EPUB reader component.
-5. Optionally cache **etag** / file size later; for MVP, overwrite on each “sync” is fine.
+4. Pass the **local file URL** into the EPUB reader.
+5. App downloads when needed if bundled EPUB is missing.
 
 ---
 

@@ -41,6 +41,8 @@ enum AudiobookLoader {
 
         return Audiobook(
             folderName: bookFolderURL.lastPathComponent,
+            backendBookID: bookFolderURL.lastPathComponent,
+            backendEpubFilename: nil,
             title: metadata.title,
             author: metadata.author,
             publisher: metadata.publisher,

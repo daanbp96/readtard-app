@@ -324,6 +324,8 @@ private struct AskMessageBubble: View {
             source: .audiobook,
             book: Audiobook(
                 folderName: "Preview",
+                backendBookID: "Preview",
+                backendEpubFilename: nil,
                 title: "Preview Book",
                 author: "Preview Author",
                 publisher: "Preview Publisher",

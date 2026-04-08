@@ -41,7 +41,7 @@ flowchart LR
 - **`app/main.py`** — FastAPI application: on startup it loads environment variables, constructs **one shared LLM**, and initializes an **empty in-memory cache** of `ReadingSession` instances (one per book id when first needed). There is **no default book** preloaded.
 - **`app/api/`** — HTTP layer: JSON schemas, route handlers, and a small **session pool** helper that lazily creates a `ReadingSession` per `book_id`.
 - **`app/library/`** — **On-disk book discovery**: where EPUBs live, how `book_id` maps to files, optional `metadata.json` per book.
-- **`app/book/`** — EPUB → plain text in **spine order**, **snippet → reader position** (spine index + character offset), **narrow context window** around the reader for deictic references (“this”, “here”).
+- **`app/book/`** — EPUB → plain text in **spine order**, position resolution utilities, and **narrow context window** around the reader for deictic references (“this”, “here”).
 - **`app/index/`** — **Chunking**, **metadata** so each chunk has an end position in a global “spine + offset” ordering, **persisted vector index** per EPUB file, and a **reader boundary** used to filter retrieval.
 - **`app/session/`** — **Spoiler-safe retrieval** (vector search with metadata filter), optional merge of “read-so-far” partial chunk, **response synthesis** or passage-only answer via LlamaIndex + prompts in **`app/prompts/`**.
 - **`app/llm/`** — Factory for the OpenAI chat model and **system prompt** text for spoiler-safe behavior.
@@ -56,7 +56,7 @@ Data on disk:
 
 ## Spoiler safety (how it works)
 
-1. **Position** — The reader supplies a **snippet** that must match **exactly one** place in the flattened plain text of the EPUB (`resolve_position_from_snippet`). That yields a **sort key** representing “how far through the book” the reader is.
+1. **Position** — The reader supplies locator-based position payload data; backend resolves that to an internal sort key representing “how far through the book” the reader is.
 2. **Chunks** — The book is split into chunks with metadata so each chunk knows its **end position** in the same ordering.
 3. **Retrieval** — Vector search runs with a **metadata filter**: only chunks **at or before** the reader’s position are candidates. That prevents later-chapter spoilers from entering the context.
 4. **Answering** — The LLM gets retrieved passages plus a **small local window** of text around the reader for resolving references; prompts in **`app/prompts/query_prompts.py`** and **`app/llm/system_prompts.py`** reinforce evidence-only answers.
@@ -72,7 +72,7 @@ Audiobook support is **prepared at the API shape** (`source: audiobook` + `times
 | `GET /health` | Returns `{ status, ready }` after startup. |
 | `GET /books` | Lists books found under `data/books/*/`. |
 | `GET /books/{book_id}/epub` | Serves the **same EPUB file** the server indexes (for mobile ereader sync). |
-| `POST /ask` | **Required:** `book_id`, `question`, `source`, and position payload. For `source: ebook`, a **snippet** is required. Returns `{ answer }` or validation / business errors. |
+| `POST /ask` | **Required:** `book_id`, `question`, `source`, and position payload. For `source: ebook`, frontend currently sends `ebook.kind = "locator"` and `ebook.locator`. Returns `{ answer }` or validation / business errors. |
 
 There is **no authentication** and **no multi-tenant isolation**; it is aimed at **local development** and **single-user demos**. Sessions and indices live **in the server process**; restarting the process drops in-memory sessions (indices remain on disk under `persist_dir/`).
 
