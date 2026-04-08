@@ -26,16 +26,7 @@ struct EbookReaderView: View {
 
                 if reader.hasLoadedEbook {
                     if let navigator = reader.navigator {
-                        EbookNavigatorContainerView(navigator: navigator) { zone in
-                            switch zone {
-                            case .left:
-                                reader.goToPreviousPage()
-                            case .center:
-                                reader.toggleControls()
-                            case .right:
-                                reader.goToNextPage()
-                            }
-                        }
+                        EbookNavigatorContainerView(navigator: navigator)
                             .padding(.top, topContentInset(isLandscape: isLandscape))
                             .padding(.bottom, bottomContentInset(isLandscape: isLandscape))
                             .ignoresSafeArea()
@@ -44,6 +35,8 @@ struct EbookReaderView: View {
                             .opacity((1 - reader.appearance.brightness) * 0.55)
                             .ignoresSafeArea()
                             .allowsHitTesting(false)
+
+                        navigationOverlay()
 
                         readerChromeProtection(isLandscape: isLandscape)
 
@@ -291,43 +284,50 @@ struct EbookReaderView: View {
             .allowsHitTesting(false)
         }
     }
+    private func navigationOverlay() -> some View {
+        GeometryReader { geometry in
+            HStack(spacing: 0) {
+                tapColumn(width: geometry.size.width * 0.2) {
+                    reader.goToPreviousPage()
+                }
+
+                tapColumn(width: geometry.size.width * 0.6) {
+                    reader.toggleControls()
+                }
+
+                tapColumn(width: geometry.size.width * 0.2) {
+                    reader.goToNextPage()
+                }
+            }
+        }
+        .ignoresSafeArea()
+    }
+
+    private func tapColumn(width: CGFloat, action: @escaping () -> Void) -> some View {
+        Color.clear
+            .frame(width: width)
+            .contentShape(Rectangle())
+            .onTapGesture(perform: action)
+    }
 }
 
 private struct EbookNavigatorContainerView: UIViewControllerRepresentable {
-    enum TapZone {
-        case left
-        case center
-        case right
-    }
-
     let navigator: VisualNavigator & UIViewController
-    let onTapZone: (TapZone) -> Void
 
     func makeUIViewController(context: Context) -> EbookNavigatorHostViewController {
-        EbookNavigatorHostViewController(navigator: navigator, onTapZone: onTapZone)
+        EbookNavigatorHostViewController(navigator: navigator)
     }
 
     func updateUIViewController(_ uiViewController: EbookNavigatorHostViewController, context: Context) {
         uiViewController.setNavigator(navigator)
-        uiViewController.onTapZone = onTapZone
     }
 }
 
 private final class EbookNavigatorHostViewController: UIViewController {
     private var navigator: (VisualNavigator & UIViewController)
-    var onTapZone: ((EbookNavigatorContainerView.TapZone) -> Void)?
-    private lazy var tapRecognizer: UITapGestureRecognizer = {
-        let recognizer = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
-        recognizer.cancelsTouchesInView = false
-        return recognizer
-    }()
 
-    init(
-        navigator: VisualNavigator & UIViewController,
-        onTapZone: @escaping (EbookNavigatorContainerView.TapZone) -> Void
-    ) {
+    init(navigator: VisualNavigator & UIViewController) {
         self.navigator = navigator
-        self.onTapZone = onTapZone
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -339,7 +339,6 @@ private final class EbookNavigatorHostViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .clear
-        view.addGestureRecognizer(tapRecognizer)
         embedCurrentNavigator()
     }
 
@@ -369,28 +368,6 @@ private final class EbookNavigatorHostViewController: UIViewController {
         navigator.willMove(toParent: nil)
         navigator.view.removeFromSuperview()
         navigator.removeFromParent()
-    }
-
-    @objc
-    private func handleTap(_ recognizer: UITapGestureRecognizer) {
-        guard recognizer.state == .ended else {
-            return
-        }
-
-        let location = recognizer.location(in: view)
-        let width = max(view.bounds.width, 1)
-        let zone: EbookNavigatorContainerView.TapZone
-
-        switch location.x / width {
-        case ..<0.33:
-            zone = .left
-        case ..<0.66:
-            zone = .center
-        default:
-            zone = .right
-        }
-
-        onTapZone?(zone)
     }
 }
 
