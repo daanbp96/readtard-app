@@ -23,16 +23,11 @@ final class AudioPlayerController: NSObject, ObservableObject {
     private var audioPlayer: AVAudioPlayer?
     private var progressTimer: Timer?
 
-    override init() {
-        super.init()
-        loadBook()
-    }
-
     deinit {
         progressTimer?.invalidate()
     }
 
-    func loadBook() {
+    func load(book: Audiobook) {
         currentTime = 0
         isPlaying = false
         playbackRate = 1
@@ -40,16 +35,18 @@ final class AudioPlayerController: NSObject, ObservableObject {
         loadingError = nil
 
         configureAudioSession()
+        self.book = book
+        configureAudioPlayer(for: book)
+    }
 
-        do {
-            let loadedBook = try AudiobookLoader.loadBundledAudiobook()
-            book = loadedBook
-            configureAudioPlayer(for: loadedBook)
-        } catch {
-            book = nil
-            audioPlayer = nil
-            loadingError = error.localizedDescription
-        }
+    func unloadBook() {
+        stopProgressTimer()
+        audioPlayer?.stop()
+        audioPlayer = nil
+        book = nil
+        currentTime = 0
+        isPlaying = false
+        loadingError = nil
     }
 
     func togglePlayback() {
@@ -108,6 +105,7 @@ final class AudioPlayerController: NSObject, ObservableObject {
     private func configureAudioPlayer(for book: Audiobook) {
         guard let audioURL = book.audioURL else {
             audioPlayer = nil
+            loadingError = nil
             return
         }
 

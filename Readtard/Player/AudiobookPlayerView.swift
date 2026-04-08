@@ -8,6 +8,7 @@ import SwiftUI
 struct AudiobookPlayerView: View {
     @ObservedObject var player: AudioPlayerController
     let onAskTapped: () -> Void
+    let onSwitchMode: () -> Void
 
     var body: some View {
         if let book = player.book {
@@ -55,7 +56,10 @@ struct AudiobookPlayerView: View {
             }
             .buttonStyle(.plain)
 
-            Button {
+            Menu {
+                Button("Switch to ebook") {
+                    onSwitchMode()
+                }
             } label: {
                 Image(systemName: "ellipsis")
                     .font(.system(size: 16, weight: .bold))
@@ -63,6 +67,7 @@ struct AudiobookPlayerView: View {
                     .background(Color.white.opacity(0.12))
                     .clipShape(Circle())
             }
+            .menuStyle(.button)
             .buttonStyle(.plain)
         }
     }

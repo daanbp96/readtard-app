@@ -6,6 +6,30 @@
 import Combine
 import Foundation
 
+enum AskSource: Equatable {
+    case audiobook
+    case ebook
+
+    var title: String {
+        switch self {
+        case .audiobook:
+            return "audiobook"
+        case .ebook:
+            return "ebook"
+        }
+    }
+}
+
+struct AskSheetContext {
+    let source: AskSource
+    let book: Audiobook
+    let currentTime: TimeInterval?
+    let duration: TimeInterval?
+    let currentPage: Int?
+    let totalPages: Int?
+    let ebookSelectionLocator: EbookLocator?
+}
+
 @MainActor
 final class AskConversationController: ObservableObject {
     @Published var messages: [AskMessage] = []
@@ -13,26 +37,48 @@ final class AskConversationController: ObservableObject {
     @Published var isSending = false
     @Published private(set) var contextSummary: String?
 
+    private let apiClient: ReadtardAPIClient
     private var context: AskContext?
 
-    func configure(book: Audiobook?, currentTime: TimeInterval, duration: TimeInterval) {
+    init() {
+        self.apiClient = ReadtardAPIClient()
+    }
+
+    init(apiClient: ReadtardAPIClient) {
+        self.apiClient = apiClient
+    }
+
+    func configure(context: AskSheetContext?) {
         guard messages.isEmpty else {
             return
         }
 
-        guard let book else {
-            contextSummary = "I could not load the current audiobook context yet."
+        guard let context else {
+            contextSummary = "I could not load the current book context yet."
             return
         }
 
-        context = AskContext(
-            title: book.title,
-            author: book.author,
-            publisher: book.publisher,
-            currentTime: currentTime,
-            duration: duration
+        self.context = AskContext(
+            source: context.source,
+            title: context.book.title,
+            author: context.book.author,
+            publisher: context.book.publisher,
+            bookID: context.book.backendBookID,
+            currentTime: context.currentTime,
+            duration: context.duration,
+            currentPage: context.currentPage,
+            totalPages: context.totalPages,
+            ebookSelectionLocator: context.ebookSelectionLocator
         )
-        contextSummary = "\(book.title) · \(formattedTime(currentTime))"
+
+        switch context.source {
+        case .audiobook:
+            contextSummary = "\(context.book.title) · Audiobook · \(formattedTime(context.currentTime ?? 0))"
+        case .ebook:
+            let currentPage = context.currentPage ?? 1
+            let totalPages = context.totalPages ?? 1
+            contextSummary = "\(context.book.title) · Ebook · Page \(currentPage) of \(totalPages)"
+        }
     }
 
     func sendCurrentQuestion() {
@@ -48,21 +94,27 @@ final class AskConversationController: ObservableObject {
         let responseContext = context
 
         Task {
-            try? await Task.sleep(for: .milliseconds(700))
+            defer { isSending = false }
 
-            let responseText: String
-            if let responseContext {
-                responseText = """
-                Placeholder answer for the future LLM backend.
-
-                Question received for "\(responseContext.title)" at \(formattedTime(responseContext.currentTime)) of \(formattedTime(responseContext.duration)). The backend request can include the book metadata plus the listening position, then return the assistant response here.
-                """
-            } else {
-                responseText = "The ask assistant is not ready because the audiobook context is missing."
+            guard let responseContext else {
+                messages.append(AskMessage(role: .assistant, text: "The ask assistant is not ready because the book context is missing."))
+                return
             }
 
-            messages.append(AskMessage(role: .assistant, text: responseText))
-            isSending = false
+            do {
+                if responseContext.source == .ebook, responseContext.ebookSelectionLocator == nil {
+                    messages.append(AskMessage(role: .assistant, text: "Select text in the ebook before asking."))
+                    return
+                }
+
+                let request = responseContext.makeRequest(question: trimmedDraft)
+                debugPrintRequest(request)
+                let response = try await apiClient.ask(request)
+                messages.append(AskMessage(role: .assistant, text: response.answer))
+            } catch {
+                let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                messages.append(AskMessage(role: .assistant, text: message))
+            }
         }
     }
 
@@ -71,6 +123,25 @@ final class AskConversationController: ObservableObject {
         let minutes = totalSeconds / 60
         let remainder = totalSeconds % 60
         return String(format: "%d:%02d", minutes, remainder)
+    }
+
+    private func debugPrintRequest(_ request: AskRequest) {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+
+        guard
+            let data = try? encoder.encode(request),
+            let json = String(data: data, encoding: .utf8)
+        else {
+            print("=== ASK REQUEST PAYLOAD ===")
+            print("Unable to encode ask request for debug output.")
+            print("===========================")
+            return
+        }
+
+        print("=== ASK REQUEST PAYLOAD ===")
+        print(json)
+        print("===========================")
     }
 }
 
@@ -95,9 +166,51 @@ struct AskMessage: Identifiable {
 }
 
 private struct AskContext {
+    let source: AskSource
     let title: String
     let author: String
     let publisher: String
-    let currentTime: TimeInterval
-    let duration: TimeInterval
+    let bookID: String
+    let currentTime: TimeInterval?
+    let duration: TimeInterval?
+    let currentPage: Int?
+    let totalPages: Int?
+    let ebookSelectionLocator: EbookLocator?
+
+    var positionDescription: String {
+        switch source {
+        case .audiobook:
+            "Audiobook at \(formattedTime(currentTime ?? 0)) of \(formattedTime(duration ?? 0))"
+        case .ebook:
+            "Ebook page \(currentPage ?? 1) of \(totalPages ?? 1)"
+        }
+    }
+
+    private func formattedTime(_ seconds: TimeInterval) -> String {
+        let totalSeconds = Int(seconds.rounded(.down))
+        let minutes = totalSeconds / 60
+        let remainder = totalSeconds % 60
+        return String(format: "%d:%02d", minutes, remainder)
+    }
+
+    func makeRequest(question: String) -> AskRequest {
+        switch source {
+        case .audiobook:
+            return AskRequest(
+                bookID: bookID,
+                source: source.title,
+                question: question,
+                ebook: nil,
+                audiobook: .init(timestampSec: currentTime ?? 0)
+            )
+        case .ebook:
+            return AskRequest(
+                bookID: bookID,
+                source: source.title,
+                question: question,
+                ebook: .init(kind: "locator", locator: ebookSelectionLocator),
+                audiobook: nil
+            )
+        }
+    }
 }

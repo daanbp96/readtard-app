@@ -5,6 +5,8 @@
     "coverImageFileName": "cover.jpg",
     "audioFileName": "audiobook",
     "audioFileExtension": "mp3",
+    "ebookFileName": "book",
+    "ebookFileExtension": "epub",
     "badge": "",
     "durationSeconds": 0,
     "theme": {

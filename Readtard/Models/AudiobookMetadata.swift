@@ -10,8 +10,10 @@ struct AudiobookMetadata: Decodable {
     let author: String
     let publisher: String
     let coverImageFileName: String?
-    let audioFileName: String
-    let audioFileExtension: String
+    let audioFileName: String?
+    let audioFileExtension: String?
+    let ebookFileName: String?
+    let ebookFileExtension: String?
     let badge: String
     let durationSeconds: TimeInterval?
     let theme: ThemeMetadata

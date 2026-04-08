@@ -7,7 +7,7 @@ import Combine
 import SwiftUI
 
 struct AskConversationSheet: View {
-    @ObservedObject var player: AudioPlayerController
+    let context: AskSheetContext
     let onClose: () -> Void
     @StateObject private var conversation = AskConversationController()
     @FocusState private var isInputFocused: Bool
@@ -77,11 +77,7 @@ struct AskConversationSheet: View {
         .offset(y: max(dragOffset, 0))
         .gesture(dismissGesture)
         .task {
-            conversation.configure(
-                book: player.book,
-                currentTime: player.currentTime,
-                duration: player.duration
-            )
+            conversation.configure(context: context)
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
             guard let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else {
@@ -115,7 +111,7 @@ struct AskConversationSheet: View {
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.white)
 
-            Text("Answers are based on what you've heard so far.")
+            Text(supportLine)
                 .font(.system(size: 15, weight: .medium))
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.white.opacity(0.62))
@@ -144,7 +140,7 @@ struct AskConversationSheet: View {
 
     private var composer: some View {
         HStack(alignment: .bottom, spacing: 12) {
-            TextField("Ask about what you just heard...", text: $conversation.draft, axis: .vertical)
+            TextField(composerPlaceholder, text: $conversation.draft, axis: .vertical)
                 .focused($isInputFocused)
                 .lineLimit(1...5)
                 .padding(.horizontal, 16)
@@ -187,7 +183,30 @@ struct AskConversationSheet: View {
     }
 
     private var title: String {
-        player.isPlaying ? "Listening · Ask" : "Paused · Ask"
+        switch context.source {
+        case .audiobook:
+            return "Audiobook · Ask"
+        case .ebook:
+            return "Ebook · Ask"
+        }
+    }
+
+    private var supportLine: String {
+        switch context.source {
+        case .audiobook:
+            return "Answers are based on what you've heard so far."
+        case .ebook:
+            return "Answers are based on your selected passage."
+        }
+    }
+
+    private var composerPlaceholder: String {
+        switch context.source {
+        case .audiobook:
+            return "Ask about what you just heard..."
+        case .ebook:
+            return "Ask about what you're reading..."
+        }
     }
 
     private var dismissGesture: some Gesture {
@@ -206,11 +225,7 @@ struct AskConversationSheet: View {
     }
 
     private var sheetTheme: PlayerTheme {
-        player.book?.theme ?? PlayerTheme(
-            backgroundTop: Color(red: 0.20, green: 0.08, blue: 0.12),
-            backgroundBottom: Color(red: 0.11, green: 0.04, blue: 0.07),
-            coverStripe: Color(red: 0.66, green: 0.18, blue: 0.24)
-        )
+        context.book.theme
     }
 
     private var backgroundLayer: some View {
@@ -304,5 +319,33 @@ private struct AskMessageBubble: View {
 }
 
 #Preview {
-    AskConversationSheet(player: AudioPlayerController(), onClose: {})
+    AskConversationSheet(
+        context: AskSheetContext(
+            source: .audiobook,
+            book: Audiobook(
+                folderName: "Preview",
+                title: "Preview Book",
+                author: "Preview Author",
+                publisher: "Preview Publisher",
+                badge: "Sample",
+                duration: 300,
+                coverImageFileName: nil,
+                audioFileName: nil,
+                audioFileExtension: nil,
+                ebookFileName: nil,
+                ebookFileExtension: nil,
+                theme: PlayerTheme(
+                    backgroundTop: Color(red: 0.20, green: 0.08, blue: 0.12),
+                    backgroundBottom: Color(red: 0.11, green: 0.04, blue: 0.07),
+                    coverStripe: Color(red: 0.66, green: 0.18, blue: 0.24)
+                )
+            ),
+            currentTime: 52,
+            duration: 300,
+            currentPage: nil,
+            totalPages: nil,
+            ebookSelectionLocator: nil
+        ),
+        onClose: {}
+    )
 }
