@@ -88,6 +88,7 @@ final class EbookReaderController: ObservableObject {
     private var chapterTargetsByID: [String: ChapterTarget] = [:]
     private var positions: [Locator] = []
     private var openTask: Task<Void, Never>?
+    private var isLandscapeLayout = false
 
     func reset() {
         openTask?.cancel()
@@ -191,6 +192,15 @@ final class EbookReaderController: ObservableObject {
 
     func setBrightness(_ value: Double) {
         appearance.brightness = min(max(value, 0.45), 1.0)
+    }
+
+    func setLandscapeLayout(_ isLandscape: Bool) {
+        guard isLandscapeLayout != isLandscape else {
+            return
+        }
+
+        isLandscapeLayout = isLandscape
+        submitCurrentPreferences()
     }
 
     func goToNextPage() {
@@ -422,7 +432,7 @@ final class EbookReaderController: ObservableObject {
         EPUBPreferences(
             fontSize: appearance.fontScale,
             lineHeight: 1.45,
-            pageMargins: 1.0,
+            pageMargins: currentPageMargins,
             publisherStyles: appearance.themePreset.usesPublisherStyles,
             scroll: false,
             theme: appearance.themePreset.navigatorTheme
@@ -438,12 +448,16 @@ final class EbookReaderController: ObservableObject {
             EPUBPreferences(
                 fontSize: appearance.fontScale,
                 lineHeight: 1.45,
-                pageMargins: 1.0,
+                pageMargins: currentPageMargins,
                 publisherStyles: appearance.themePreset.usesPublisherStyles,
                 scroll: false,
                 theme: appearance.themePreset.navigatorTheme
             )
         )
+    }
+
+    private var currentPageMargins: Double {
+        isLandscapeLayout ? 0.72 : 1.0
     }
 
     private func buildChapterTargets(from links: [Link], positions: [Locator], depth: Int = 0) -> [ChapterTarget] {

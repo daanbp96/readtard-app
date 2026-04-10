@@ -22,7 +22,7 @@ struct EbookReaderView: View {
             let safeArea = geometry.safeAreaInsets
 
             ZStack {
-                Color(red: 0.12, green: 0.12, blue: 0.13)
+                readerCanvasColor
                     .ignoresSafeArea()
 
                 if reader.hasLoadedEbook {
@@ -50,6 +50,12 @@ struct EbookReaderView: View {
                 } else {
                     missingEbookView
                 }
+            }
+            .onAppear {
+                reader.setLandscapeLayout(isLandscape)
+            }
+            .onChange(of: isLandscape) { _, newValue in
+                reader.setLandscapeLayout(newValue)
             }
         }
         .sheet(isPresented: $isSettingsPresented) {
@@ -144,14 +150,22 @@ struct EbookReaderView: View {
         }
     }
 
+    private var readerCanvasColor: Color {
+        switch reader.appearance.themePreset {
+        case .original, .bold, .focus:
+            return .black
+        case .quiet:
+            return Color(red: 0.98, green: 0.98, blue: 0.99)
+        case .paper, .calm:
+            return Color(red: 0.96, green: 0.94, blue: 0.88)
+        }
+    }
+
     private func readerChromeProtection(isLandscape: Bool) -> some View {
+        let base = readerCanvasColor
         VStack(spacing: 0) {
             LinearGradient(
-                colors: [
-                    Color(red: 0.12, green: 0.12, blue: 0.13),
-                    Color(red: 0.12, green: 0.12, blue: 0.13).opacity(0.88),
-                    Color(red: 0.12, green: 0.12, blue: 0.13).opacity(0)
-                ],
+                stops: chromeGradientStops(edge: .top, base: base, isLandscape: isLandscape),
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -160,11 +174,7 @@ struct EbookReaderView: View {
             Spacer()
 
             LinearGradient(
-                colors: [
-                    Color(red: 0.12, green: 0.12, blue: 0.13).opacity(0),
-                    Color(red: 0.12, green: 0.12, blue: 0.13).opacity(0.9),
-                    Color(red: 0.12, green: 0.12, blue: 0.13)
-                ],
+                stops: chromeGradientStops(edge: .bottom, base: base, isLandscape: isLandscape),
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -174,20 +184,53 @@ struct EbookReaderView: View {
         .allowsHitTesting(false)
     }
 
+    private func chromeGradientStops(edge: ChromeEdge, base: Color, isLandscape: Bool) -> [Gradient.Stop] {
+        let strong: CGFloat = isLandscape ? 0.55 : 0.88
+        let mid: CGFloat = isLandscape ? 0.18 : 0.42
+        switch edge {
+        case .top:
+            return [
+                .init(color: base.opacity(strong), location: 0),
+                .init(color: base.opacity(mid), location: isLandscape ? 0.55 : 0.45),
+                .init(color: base.opacity(0), location: 1)
+            ]
+        case .bottom:
+            return [
+                .init(color: base.opacity(0), location: 0),
+                .init(color: base.opacity(mid), location: isLandscape ? 0.45 : 0.55),
+                .init(color: base.opacity(strong), location: 1)
+            ]
+        }
+    }
+
+    private enum ChromeEdge {
+        case top
+        case bottom
+    }
+
     private func topContentInset(isLandscape: Bool) -> CGFloat {
-        isLandscape ? 86 : 108
+        isLandscape ? 36 : 108
     }
 
     private func bottomContentInset(isLandscape: Bool) -> CGFloat {
-        isLandscape ? 86 : 104
+        isLandscape ? 40 : 104
     }
 
     private func fixedTopChromeHeight(isLandscape: Bool) -> CGFloat {
-        isLandscape ? 104 : 120
+        isLandscape ? 52 : 120
     }
 
     private func fixedBottomChromeHeight(isLandscape: Bool) -> CGFloat {
-        isLandscape ? 106 : 126
+        isLandscape ? 56 : 126
+    }
+
+    private func chromeLabelColor(opacity: Double) -> Color {
+        switch reader.appearance.themePreset {
+        case .original, .bold, .focus:
+            return Color.white.opacity(opacity)
+        case .quiet, .paper, .calm:
+            return Color.black.opacity(opacity)
+        }
     }
 
     @ViewBuilder
@@ -215,7 +258,7 @@ struct EbookReaderView: View {
 
                 Text("\(reader.pagesLeftInChapter) pages left in chapter")
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(chromeLabelColor(opacity: 0.7))
                     .padding(.top, isLandscape ? 6 : 8)
                     .padding(.horizontal, max(24, max(safeArea.leading, safeArea.trailing) + 8))
 
@@ -233,13 +276,13 @@ struct EbookReaderView: View {
                             .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(chromeLabelColor(opacity: 1))
 
                     Spacer()
 
                     Text("\(reader.currentPageNumber) of \(reader.totalPages)")
                         .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(chromeLabelColor(opacity: 0.7))
                         .multilineTextAlignment(.center)
 
                     Spacer()
@@ -273,16 +316,18 @@ struct EbookReaderView: View {
         } else {
             VStack {
                 Text(reader.title)
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.72))
-                    .padding(.top, max(42, safeArea.top + 20))
+                    .font(.system(size: isLandscape ? 14 : 18, weight: .medium, design: .serif))
+                    .foregroundStyle(chromeLabelColor(opacity: isLandscape ? 0.42 : 0.72))
+                    .lineLimit(isLandscape ? 1 : 2)
+                    .minimumScaleFactor(0.85)
+                    .padding(.top, isLandscape ? max(6, safeArea.top + 2) : max(42, safeArea.top + 20))
 
                 Spacer()
 
                 Text("\(reader.currentPageNumber)")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
-                    .padding(.bottom, max(34, safeArea.bottom + 12))
+                    .font(.system(size: isLandscape ? 13 : 16, weight: .medium, design: .rounded))
+                    .foregroundStyle(chromeLabelColor(opacity: isLandscape ? 0.38 : 0.62))
+                    .padding(.bottom, isLandscape ? max(8, safeArea.bottom + 4) : max(34, safeArea.bottom + 12))
             }
             .padding(.horizontal, max(24, max(safeArea.leading, safeArea.trailing) + 8))
             .allowsHitTesting(false)
