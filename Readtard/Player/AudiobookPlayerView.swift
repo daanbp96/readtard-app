@@ -11,36 +11,111 @@ struct AudiobookPlayerView: View {
     let onSwitchMode: () -> Void
 
     var body: some View {
-        if let book = player.book {
-            VStack(spacing: 24) {
-                Spacer(minLength: 0)
+        GeometryReader { geometry in
+            if let book = player.book {
+                let isLandscape = geometry.size.width > geometry.size.height
+                Group {
+                    if isLandscape {
+                        landscapeContent(book: book, geometry: geometry)
+                    } else {
+                        portraitContent(book: book)
+                    }
+                }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+    }
 
-                ArtworkCard(book: book)
+    private func portraitContent(book: Audiobook) -> some View {
+        VStack(spacing: 24) {
+            Spacer(minLength: 0)
 
-                metadataRow(book: book)
+            ArtworkCard(book: book)
+
+            metadataRow(book: book)
+            progressSection(book: book)
+            transportControls
+            volumeSection
+            utilityRow
+
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func landscapeContent(book: Audiobook, geometry: GeometryProxy) -> some View {
+        let safe = geometry.safeAreaInsets
+        let usableH = geometry.size.height - safe.top - safe.bottom
+        let coverHeight = min(300, max(160, usableH - 24))
+        let coverWidth = min(coverHeight * 0.68, max(120, geometry.size.width * 0.36 - safe.leading - safe.trailing))
+
+        return HStack(alignment: .center, spacing: 20) {
+            ArtworkCard(book: book, coverHeight: coverHeight, width: coverWidth)
+
+            VStack(alignment: .leading, spacing: 16) {
+                landscapeMetadata(book: book)
                 progressSection(book: book)
                 transportControls
                 volumeSection
                 utilityRow
-
-                Spacer(minLength: 0)
             }
-            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func titleAuthorStack(book: Audiobook, titleSize: CGFloat, titleLineLimit: Int) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(book.title)
+                .font(.system(size: titleSize, weight: .semibold, design: .rounded))
+                .lineLimit(titleLineLimit)
+                .minimumScaleFactor(0.7)
+                .multilineTextAlignment(.leading)
+
+            Text(book.author)
+                .font(.system(size: titleSize >= 28 ? 16 : 15, weight: .medium))
+                .foregroundStyle(.white.opacity(0.86))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func landscapeMetadata(book: Audiobook) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            titleAuthorStack(book: book, titleSize: 22, titleLineLimit: 2)
+
+            HStack(spacing: 10) {
+                Button {
+                    onAskTapped()
+                } label: {
+                    Text("Ask me")
+                        .font(.system(size: 16, weight: .semibold))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 9)
+                        .background(Color.white.opacity(0.12))
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+
+                Menu {
+                    Button("Switch to ebook") {
+                        onSwitchMode()
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 15, weight: .bold))
+                        .frame(width: 34, height: 34)
+                        .background(Color.white.opacity(0.12))
+                        .clipShape(Circle())
+                }
+                .menuStyle(.button)
+                .buttonStyle(.plain)
+            }
+            .padding(.top, 4)
         }
     }
 
     private func metadataRow(book: Audiobook) -> some View {
         HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(book.title)
-                    .font(.system(size: 33, weight: .semibold, design: .rounded))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-
-                Text(book.author)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.86))
-            }
+            titleAuthorStack(book: book, titleSize: 33, titleLineLimit: 1)
 
             Spacer(minLength: 8)
 

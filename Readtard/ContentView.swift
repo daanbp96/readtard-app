@@ -86,10 +86,13 @@ struct ContentView: View {
                     .ignoresSafeArea()
                     .transition(.opacity)
 
-                AskConversationSheet(
-                    context: askContext,
-                    onClose: dismissAskSheet
-                )
+                VStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    AskConversationSheet(
+                        context: askContext,
+                        onClose: dismissAskSheet
+                    )
+                }
                 .transition(.move(edge: .bottom).combined(with: .opacity))
                 .zIndex(1)
             }
@@ -356,28 +359,32 @@ private struct MissingModeView: View {
     let action: () -> Void
 
     var body: some View {
-        VStack(spacing: 18) {
-            Spacer()
+        ScrollView {
+            VStack(spacing: 18) {
+                Spacer(minLength: 24)
 
-            ArtworkCard(book: book)
+                ArtworkCard(book: book)
 
-            Text(message)
-                .font(.system(size: 24, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.92))
-                .multilineTextAlignment(.center)
+                Text(message)
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.92))
+                    .multilineTextAlignment(.center)
 
-            Button(buttonTitle) {
-                action()
+                Button(buttonTitle) {
+                    action()
+                }
+                .font(.system(size: 18, weight: .semibold))
+                .padding(.horizontal, 22)
+                .padding(.vertical, 14)
+                .background(Color.white.opacity(0.12))
+                .foregroundStyle(.white)
+                .clipShape(Capsule())
+                .buttonStyle(.plain)
+
+                Spacer(minLength: 24)
             }
-            .font(.system(size: 18, weight: .semibold))
-            .padding(.horizontal, 22)
-            .padding(.vertical, 14)
-            .background(Color.white.opacity(0.12))
-            .foregroundStyle(.white)
-            .clipShape(Capsule())
-            .buttonStyle(.plain)
-
-            Spacer()
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
         }
     }
 }

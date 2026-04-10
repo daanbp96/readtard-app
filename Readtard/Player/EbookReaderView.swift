@@ -19,6 +19,7 @@ struct EbookReaderView: View {
     var body: some View {
         GeometryReader { geometry in
             let isLandscape = geometry.size.width > geometry.size.height
+            let safeArea = geometry.safeAreaInsets
 
             ZStack {
                 Color(red: 0.12, green: 0.12, blue: 0.13)
@@ -40,7 +41,7 @@ struct EbookReaderView: View {
 
                         readerChromeProtection(isLandscape: isLandscape)
 
-                        overlayControls(isLandscape: isLandscape)
+                        overlayControls(isLandscape: isLandscape, safeArea: safeArea)
                     } else if reader.isLoading {
                         loadingView
                     } else {
@@ -190,7 +191,7 @@ struct EbookReaderView: View {
     }
 
     @ViewBuilder
-    private func overlayControls(isLandscape: Bool) -> some View {
+    private func overlayControls(isLandscape: Bool, safeArea: EdgeInsets) -> some View {
         if reader.controlsVisible {
             VStack {
                 HStack {
@@ -208,13 +209,15 @@ struct EbookReaderView: View {
                     .buttonStyle(.plain)
                     .foregroundStyle(.white)
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 18)
+                .padding(.leading, max(24, safeArea.leading + 8))
+                .padding(.trailing, max(24, safeArea.trailing + 8))
+                .padding(.top, max(18, safeArea.top + 8))
 
                 Text("\(reader.pagesLeftInChapter) pages left in chapter")
                     .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(.white.opacity(0.7))
-                    .padding(.top, isLandscape ? -34 : 4)
+                    .padding(.top, isLandscape ? 6 : 8)
+                    .padding(.horizontal, max(24, max(safeArea.leading, safeArea.trailing) + 8))
 
                 Spacer()
 
@@ -231,13 +234,13 @@ struct EbookReaderView: View {
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(.white)
-                    .padding(.leading, 24)
 
                     Spacer()
 
                     Text("\(reader.currentPageNumber) of \(reader.totalPages)")
                         .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(.white.opacity(0.7))
+                        .multilineTextAlignment(.center)
 
                     Spacer()
 
@@ -262,25 +265,26 @@ struct EbookReaderView: View {
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(.white)
-                    .padding(.trailing, 24)
                 }
-                .padding(.bottom, isLandscape ? 24 : 34)
+                .padding(.leading, max(24, safeArea.leading + 8))
+                .padding(.trailing, max(24, safeArea.trailing + 8))
+                .padding(.bottom, max(isLandscape ? 20 : 28, safeArea.bottom + 10))
             }
         } else {
             VStack {
                 Text(reader.title)
                     .font(.system(size: 18, weight: .medium))
                     .foregroundStyle(.white.opacity(0.72))
-                    .padding(.top, 42)
+                    .padding(.top, max(42, safeArea.top + 20))
 
                 Spacer()
 
                 Text("\(reader.currentPageNumber)")
                     .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(.white.opacity(0.62))
-                    .padding(.bottom, 34)
+                    .padding(.bottom, max(34, safeArea.bottom + 12))
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, max(24, max(safeArea.leading, safeArea.trailing) + 8))
             .allowsHitTesting(false)
         }
     }

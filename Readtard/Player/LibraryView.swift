@@ -11,17 +11,17 @@ struct LibraryView: View {
     let progressStore: ReadingProgressStore
     let onSelectBook: (Audiobook) -> Void
 
-    private let columns = [
-        GridItem(.flexible(), spacing: 18),
-        GridItem(.flexible(), spacing: 18)
-    ]
+    /// Fills the row in landscape and on larger devices without hard-coding column counts.
+    private var gridColumns: [GridItem] {
+        [GridItem(.adaptive(minimum: 152, maximum: 240), spacing: 18, alignment: .top)]
+    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 header
 
-                LazyVGrid(columns: columns, spacing: 28) {
+                LazyVGrid(columns: gridColumns, spacing: 28) {
                     ForEach(books, id: \.folderName) { book in
                         Button {
                             onSelectBook(book)

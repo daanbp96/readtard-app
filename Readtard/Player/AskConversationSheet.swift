@@ -93,6 +93,8 @@ struct AskConversationSheet: View {
                 keyboardHeight = 0
             }
         }
+        .frame(maxWidth: 560)
+        .frame(maxWidth: .infinity)
     }
 
     private var headerCard: some View {
